@@ -1,72 +1,35 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../services/axios'
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import StatCard from "../components/StatCard";
+import MapView from "../components/MapView";
+import PieChartCard from "../components/PieChartCard";
 
-export default function Dashboard() {
-  const navigate = useNavigate()
-  const [user, setUser] = useState<any>(null)
-
-  useEffect(() => {
-    api.get('/user')
-      .then((res) => setUser(res.data))
-      .catch(() => {
-        localStorage.removeItem('token')
-        navigate('/login')
-      })
-  }, [navigate])
-
-  const handleLogout = async () => {
-    await api.post('/logout')
-    localStorage.removeItem('token')
-    navigate('/')
-  }
-
+const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Navbar */}
-      <header className="bg-white shadow-md p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-blue-600">MyApp</h1>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-        >
-          Logout
-        </button>
-      </header>
+    <div className="flex bg-gray-100 min-h-screen">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Header />
+        <main className="p-6 space-y-6">
+          {/* Statistik */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <StatCard title="DI Terdaftar" value={980} subtitle="Total di terdaftar" />
+            <StatCard title="PAI" value={73} subtitle="DI sudah PAI" color="text-green-600" />
+            <StatCard title="IKSI" value={0} subtitle="DI sudah IKSI" color="text-yellow-600" />
+            <StatCard title="Total Aset DI" value={1233} subtitle="Semua Aset Terdaftar" color="text-blue-600" />
+          </div>
 
-      {/* Content */}
-      <main className="flex-1 p-6">
-        <div
-          className="
-            bg-white rounded-2xl shadow-lg p-6 
-            w-full max-w-6xl mx-auto 
-            grid grid-cols-1 md:grid-cols-3 gap-6
-            animate-fade-in
-          "
-        >
-          {/* Left Sidebar */}
-          <aside className="hidden md:block col-span-1 bg-gray-50 rounded-xl p-4 shadow-sm">
-            <h3 className="font-semibold text-gray-700 mb-2">Menu</h3>
-            <ul className="space-y-2">
-              <li className="hover:text-blue-600 cursor-pointer">Dashboard</li>
-              <li className="hover:text-blue-600 cursor-pointer">Profile</li>
-              <li className="hover:text-blue-600 cursor-pointer">Settings</li>
-            </ul>
-          </aside>
-
-          {/* Main Content */}
-          <section className="col-span-2 flex flex-col items-center justify-center text-center">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">Dashboard</h2>
-            {user ? (
-              <p className="text-gray-600 text-lg">
-                Welcome back, <span className="font-semibold">{user.name}</span> 🎉
-              </p>
-            ) : (
-              <p className="text-gray-400">Loading...</p>
-            )}
-          </section>
-        </div>
-      </main>
+          {/* Map dan Chart */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <MapView />
+            </div>
+            <PieChartCard />
+          </div>
+        </main>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default Dashboard;
