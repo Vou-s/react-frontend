@@ -1,12 +1,28 @@
-# React + Vite
+# 1. Buat component baru
+echo. > src/components/dashboard/NewComponent.jsx
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Atau dengan PowerShell:
+New-Item -Path "src/components/dashboard/NewComponent.jsx" -ItemType File
 
-Currently, two official plugins are available:
+# Buat folder komponen dan halaman
+New-Item -ItemType Directory -Path "src\components" -Force
+New-Item -ItemType Directory -Path "src\pages" -Force
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+@(
+"src\components\Sidebar.tsx",
+"src\components\Navbar.tsx",
+"src\components\StatCard.tsx",
+"src\components\ChartPie.tsx",
+"src\components\MapView.tsx",
+"src\components\Layout.tsx",
+"src\pages\Dashboard.tsx"
+"src\auth\landing.tsx"
+) 
 
-## Expanding the ESLint configuration
+# 2. Implement component
+# 3. Export component
+# 4. Import di parent component
+# 5. Test component
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# 6. Check imports
+npm run build
