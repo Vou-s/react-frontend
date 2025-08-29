@@ -18,7 +18,7 @@ export default function Dashboard() {
   const handleLogout = async () => {
     await api.post('/logout')
     localStorage.removeItem('token')
-    navigate('/login')
+    navigate('/')
   }
 
   return (
