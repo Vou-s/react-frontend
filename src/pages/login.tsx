@@ -12,10 +12,14 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     try {
-      const res = await api.post('/login', { email, password })
+      // ✅ Gunakan endpoint yang sama dengan auth.ts
+    const res = await api.post('/login', { email, password })
+
+      // atau bisa juga langsung pakai fungsi login dari auth.ts
       localStorage.setItem('token', res.data.token)
       navigate('/dashboard')
-    } catch {
+    } catch (error) {
+      console.error('Login error:', error)
       alert('Invalid credentials')
     } finally {
       setLoading(false)
@@ -41,6 +45,7 @@ export default function Login() {
           className="w-full mb-4 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
         <label className="block mb-2 text-sm font-medium text-gray-700">
@@ -52,6 +57,7 @@ export default function Login() {
           className="w-full mb-6 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
 
         <button
