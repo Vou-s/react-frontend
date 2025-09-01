@@ -26,3 +26,4 @@ New-Item -ItemType Directory -Path "src\pages" -Force
 
 # 6. Check imports
 npm run build
+firebase deploy --only hosting
