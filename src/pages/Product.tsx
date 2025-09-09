@@ -9,7 +9,24 @@ export default function Products() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     useEffect(() => {
-        api.get('/products').then(r => { setProducts(r.data.data || r.data || []); setLoading(false); }).catch(() => setLoading(false));
+        api
+            .get("/products")
+            .then((r) => {
+                // cek kalau response berupa array
+                if (Array.isArray(r.data)) {
+                    setProducts(r.data);
+                } else if (r.data?.data) {
+                    // kalau backend pakai format { data: [...] }
+                    setProducts(r.data.data);
+                } else {
+                    setProducts([]);
+                }
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Fetch error:", err);
+                setLoading(false);
+            });
     }, []);
 
 

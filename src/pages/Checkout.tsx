@@ -4,35 +4,52 @@ import api from "../services/api";
 import Spinner from "../components/Spinner";
 import Toast from "../components/Toast";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Checkout() {
     const { items, total, clear, remove, increase, decrease } = useCart();
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const handlePayment = async () => {
+        // cek login
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setToast("Silakan login terlebih dahulu");
+            return navigate("/login");
+        }
+
         if (items.length === 0) return setToast("Cart kosong");
         setLoading(true);
-        try {
-            const total = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
+        try {
             const payload = {
                 items: items.map((i) => ({
-                    product_id: i.id,
-                    product_name: i.name,
-                    price: i.price,
+                    product_id: i.product_id, // ✅ pastikan id sesuai tabel products
                     quantity: i.quantity,
                 })),
-                total,
-                customer: { name: "Customer Demo", email: "customer@test.com" },
+                customer: {
+                    name: "Customer Demo",
+                    email: "customer@test.com"
+                },
+                payment_method: "midtrans"
             };
 
-            const res = await api.post("/orders", payload);
-            console.log("Payload yang dikirim:", payload); // ⬅️ debug
-            const token = res.data.snap_token || res.data.token;
-            if (!token) throw new Error("snap token tidak ditemukan");
+            console.log("Payload yang dikirim:", payload);
 
-            (window as any).snap.pay(token, {
+            // const res = await api.post("/orders", payload);
+            const res = await api.post("/orders", payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+
+            console.log("Response dari server:", res.data);
+
+            const snapToken = res.data.snap_token;
+            if (!snapToken) throw new Error("snap token tidak ditemukan");
+
+            (window as any).snap.pay(snapToken, {
                 onSuccess: function () {
                     setToast("Pembayaran sukses");
                     clear();
@@ -49,7 +66,7 @@ export default function Checkout() {
                 },
             });
         } catch (err: any) {
-            console.error(err);
+            console.error("Checkout error:", err.response?.data || err.message);
             setToast(
                 err?.response?.data?.message || err.message || "Gagal membuat order"
             );
@@ -58,6 +75,7 @@ export default function Checkout() {
             setTimeout(() => setToast(null), 4000);
         }
     };
+
 
 
     useEffect(() => {
@@ -107,7 +125,7 @@ export default function Checkout() {
                     ) : (
                         items.map((i) => (
                             <div
-                                key={i.id}
+                                key={i.product_id}
                                 className="flex items-center justify-between p-2 border-b"
                             >
                                 <div>
@@ -117,19 +135,19 @@ export default function Checkout() {
                                     </div>
                                     <div className="flex gap-2 mt-1">
                                         <button
-                                            onClick={() => decrease(i.id)}
+                                            onClick={() => decrease(i.product_id)}
                                             className="px-2 bg-gray-200 rounded"
                                         >
                                             -
                                         </button>
                                         <button
-                                            onClick={() => increase(i.id)}
+                                            onClick={() => increase(i.product_id)}
                                             className="px-2 bg-gray-200 rounded"
                                         >
                                             +
                                         </button>
                                         <button
-                                            onClick={() => remove(i.id)}
+                                            onClick={() => remove(i.product_id)}
                                             className="px-2 bg-red-500 text-white rounded"
                                         >
                                             Hapus

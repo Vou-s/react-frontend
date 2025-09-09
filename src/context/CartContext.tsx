@@ -1,95 +1,90 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useMemo } from "react";
 
 interface CartItem {
-  id: number;
+  product_id: number; // sesuai backend
   name: string;
   price: number;
   quantity: number;
+  variant?: string; // ✅ opsi tambahan (misal: ukuran, warna)
 }
+
 
 interface CartContextProps {
   items: CartItem[];
   total: number;
   add: (item: CartItem) => void;
   clear: () => void;
-  remove: (id: number) => void;
-  increase: (id: number) => void;
-  decrease: (id: number) => void;
+  remove: (product_id: number) => void;
+  increase: (product_id: number) => void;
+  decrease: (product_id: number) => void;
 }
 
 const CartContext = createContext<CartContextProps | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [total, setTotal] = useState(0);
 
+  // ✅ total selalu dihitung ulang bila items berubah
+  const total = useMemo(
+    () => items.reduce((acc, i) => acc + i.price * i.quantity, 0),
+    [items]
+  );
+
+  // ✅ helper untuk dispatch event
+  const dispatchCartEvent = (type: string, detail: string) => {
+    window.dispatchEvent(new CustomEvent(type, { detail }));
+  };
 
   const clear = () => setItems([]);
 
   const add = (item: CartItem) => {
     setItems((prev) => {
-      const exist = prev.find((p) => p.id === item.id);
+      const exist = prev.find(
+        (p) =>
+          p.product_id === item.product_id &&
+          p.variant === item.variant // kalau ada opsi
+      );
+
       if (exist) {
-        const updated = prev.map((p) =>
-          p.id === item.id ? { ...p, quantity: p.quantity + (item.quantity || 1) } : p
+        dispatchCartEvent("cart:increase", item.name);
+        return prev.map((p) =>
+          p.product_id === item.product_id && p.variant === item.variant
+            ? { ...p, quantity: p.quantity + (item.quantity || 1) }
+            : p
         );
-        const event = new CustomEvent("cart:increase", { detail: item.name });
-        window.dispatchEvent(event);
-        return updated;
       }
-      const event = new CustomEvent("cart:add", { detail: item.name });
-      window.dispatchEvent(event);
-      return [...prev, { ...item, price: Number(item.price), quantity: item.quantity || 1 }];
+
+      dispatchCartEvent("cart:add", item.name);
+      return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
   };
 
-  const remove = (id: number) => {
-    setItems((prev) => {
-      const item = prev.find((i) => i.id === id);
-      if (item) {
-        const event = new CustomEvent("cart:delete", { detail: item.name });
-        window.dispatchEvent(event);
-      }
-      return prev.filter((i) => i.id !== id);
-    });
-  };
 
-  const decrease = (id: number) => {
+  const remove = (product_id: number, variant?: string) => {
     setItems((prev) =>
-      prev.map((i) => {
-        if (i.id === id && i.quantity > 1) {
-          const event = new CustomEvent("cart:decrease", { detail: i.name });
-          window.dispatchEvent(event);
-          return { ...i, quantity: i.quantity - 1 };
-        }
-        return i;
-      })
+      prev.filter((i) => !(i.product_id === product_id && i.variant === variant))
     );
   };
 
-  const increase = (id: number) => {
+  const increase = (product_id: number, variant?: string) => {
     setItems((prev) =>
-      prev.map((i) => {
-        if (i.id === id) {
-          const event = new CustomEvent("cart:increase", { detail: i.name });
-          window.dispatchEvent(event);
-          return { ...i, quantity: i.quantity + 1 };
-        }
-        return i;
-      })
+      prev.map((i) =>
+        i.product_id === product_id && i.variant === variant
+          ? { ...i, quantity: i.quantity + 1 }
+          : i
+      )
     );
   };
 
-  useEffect(() => {
-    setTotal(
-      items.reduce((acc, i) => {
-        const price = Number(i.price) || 0;
-        const qty = Number(i.quantity) || 0;
-        return acc + price * qty;
-      }, 0)
+  const decrease = (product_id: number, variant?: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.product_id === product_id && i.variant === variant && i.quantity > 1
+          ? { ...i, quantity: i.quantity - 1 }
+          : i
+      )
     );
-  }, [items]);
-
+  };
 
   return (
     <CartContext.Provider
