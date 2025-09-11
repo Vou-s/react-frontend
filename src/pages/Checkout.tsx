@@ -14,7 +14,7 @@ export default function Checkout() {
 
     const handlePayment = async () => {
         // cek login
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("access_token");
         if (!token) {
             setToast("Silakan login terlebih dahulu");
             return navigate("/login");
@@ -33,15 +33,17 @@ export default function Checkout() {
                     name: "Customer Demo",
                     email: "customer@test.com"
                 },
+                // "customer.name": "Customer Demo",
+                // "customer.email": "customer@test.com",
                 payment_method: "midtrans"
             };
 
             console.log("Payload yang dikirim:", payload);
 
-            // const res = await api.post("/orders", payload);
-            const res = await api.post("/orders", payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.post("/orders", payload);
+            // const res = await api.post("/orders", payload, {
+            //     headers: { Authorization: `Bearer ${token}` }
+            // });
 
 
             console.log("Response dari server:", res.data);

@@ -11,18 +11,28 @@ export default function Login() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const res = await login({ email, password });
-      const token = res.data.token || res.data.access_token || res.data.data?.token;
+
+      // ambil token dari response
+      const token = res.data.access_token;
       if (!token) throw new Error('Token tidak ditemukan');
-      localStorage.setItem('token', token);
-      setUser && setUser({});
+
+      // simpan di localStorage
+      localStorage.setItem('access_token', token);
+
+      // simpan user
+      setUser && setUser(res.data.user);
+
+      // redirect
       navigate('/');
-    } catch (err: any) { setErr(err?.response?.data?.message || err.message || 'Login gagal'); }
+    } catch (err: any) {
+      setErr(err?.response?.data?.message || err.message || 'Login gagal');
+    }
   };
+
 
 
   return (
