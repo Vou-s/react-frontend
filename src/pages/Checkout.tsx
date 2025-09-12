@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Spinner from "../components/Spinner";
 import Toast from "../components/Toast";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 
 export default function Checkout() {
   const { items, total, clear, remove, increase, decrease } = useCart();
@@ -12,8 +12,6 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  const calculateTotal = () => items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
   const handlePayment = async () => {
     if (!user) {
@@ -27,7 +25,7 @@ export default function Checkout() {
     try {
       const orderPayload = {
         user_id: user.id,
-        total_amount: calculateTotal(),
+        total_amount: total,
         status: "pending",
         items: items.map(i => ({
           product_id: i.product_id,
@@ -37,10 +35,12 @@ export default function Checkout() {
         payment_method: "midtrans",
       };
 
+      // POST order
       const orderRes = await api.post("/orders", orderPayload);
       const orderId = orderRes.data?.data?.id || orderRes.data?.id;
       if (!orderId) throw new Error("Order ID tidak ditemukan");
 
+      // GET snap token
       const tokenRes = await api.get(`/midtrans/token/${orderId}`);
       const snapToken = tokenRes.data?.token;
       if (!snapToken) throw new Error("Snap token tidak ditemukan");

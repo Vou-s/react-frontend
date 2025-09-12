@@ -1,40 +1,30 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+// context/AuthContext.tsx
+import { createContext, useContext, useState, ReactNode } from "react";
 
-interface User {
+export type User = {
   id: number;
   name: string;
   email: string;
-}
+};
 
-interface AuthContextProps {
+type AuthContextType = {
   user: User | null;
-  setUser?: (user: User | null) => void;
-  logout?: () => void;
-}
+  setUser: (user: User | null) => void; // tambahkan ini
+};
 
-const AuthContext = createContext<AuthContextProps>({ user: null });
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  setUser: () => {}, // default empty function
+});
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem("user");
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  useEffect(() => {
-    if (user) localStorage.setItem("user", JSON.stringify(user));
-    else localStorage.removeItem("user");
-  }, [user]);
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("access_token");
-  };
+  const [user, setUser] = useState<User | null>(null);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
+    <AuthContext.Provider value={{ user, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);
