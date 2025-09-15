@@ -12,12 +12,11 @@ import Register from './pages/Register';
 import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
 
-
 function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
+    <BrowserRouter> {/* ✅ BrowserRouter di paling atas */}
+      <AuthProvider>
+        <CartProvider>
           <Header />
           <Routes>
             <Route path="/" element={<Home />} />
@@ -27,11 +26,10 @@ function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
           </Routes>
-        </BrowserRouter>
-      </CartProvider>
-    </AuthProvider>
+        </CartProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
-
 
 createRoot(document.getElementById('root')!).render(<App />);

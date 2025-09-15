@@ -1,30 +1,42 @@
-// context/AuthContext.tsx
-import { createContext, useContext, useState, ReactNode } from "react";
-
-export type User = {
-  id: number;
-  name: string;
-  email: string;
-};
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 type AuthContextType = {
-  user: User | null;
-  setUser: (user: User | null) => void; // tambahkan ini
+  user: any;
+  login: (data: any) => void;
+  logout: () => void;
 };
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  setUser: () => {}, // default empty function
-});
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
+
+  const login = (data: any) => {
+    setUser(data);
+    localStorage.setItem("user", JSON.stringify(data));
+    navigate("/dashboard");
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
 
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  return useContext(AuthContext) as AuthContextType;
+}

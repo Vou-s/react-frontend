@@ -20,4 +20,9 @@ api.interceptors.request.use(config => {
   return Promise.reject(error);
 });
 
+const getSnapToken = async (orderId: number) => {
+  const res = await api.get(`/midtrans/token/${orderId}`);
+  return res.data.token;
+};
+
 export default api;

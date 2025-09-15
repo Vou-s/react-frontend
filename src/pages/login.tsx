@@ -1,30 +1,38 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { login } from "../services/auth";
+import { login as apiLogin } from "../services/auth";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { login } = useAuth(); // ✅ gunakan login dari context, bukan setUser
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setErr("");
+
     try {
-      const res = await login({ email, password });
+      const res = await apiLogin({ email, password });
       const token = res.data.access_token;
       const user = res.data.user;
 
       if (!token || !user) throw new Error("Login gagal");
 
       localStorage.setItem("access_token", token);
-      setUser && setUser(user);
 
-      navigate("/");
+      // update user via login context
+      login({ ...user, token });
+
+      navigate("/"); // redirect setelah login
     } catch (err: any) {
       setErr(err?.response?.data?.message || err.message || "Login gagal");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,6 +41,7 @@ export default function Login() {
       <form onSubmit={submit} className="p-6 bg-white rounded shadow">
         <h2 className="text-xl font-bold mb-4">Login</h2>
         {err && <div className="text-red-500 mb-2">{err}</div>}
+
         <input
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -46,9 +55,22 @@ export default function Login() {
           type="password"
           className="w-full p-2 border rounded mb-4"
         />
-        <button className="w-full py-2 bg-blue-600 text-white rounded">Login</button>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full py-2 rounded text-white ${
+            loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
         <div className="mt-3 text-sm">
-          Belum punya akun? <Link to="/register" className="text-blue-600">Register</Link>
+          Belum punya akun?{" "}
+          <Link to="/register" className="text-blue-600">
+            Register
+          </Link>
         </div>
       </form>
     </div>
