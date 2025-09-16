@@ -2,20 +2,24 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import { useNavigate } from "react-router-dom";
 
 type AuthContextType = {
-  user: any;
+  user: any | null;
   login: (data: any) => void;
   logout: () => void;
+  loading: boolean; // tambahkan loading state untuk menunggu localStorage
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true); // tunggu localStorage selesai
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Ambil user dari localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
+    setLoading(false); // selesai load user
   }, []);
 
   const login = (data: any) => {
@@ -31,12 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext) as AuthContextType;
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
 }
