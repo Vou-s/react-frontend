@@ -1,6 +1,7 @@
 import React from "react";
 import type { Product } from "../types.d";
 import { useCart } from "../context/CartContext";
+import { FiShoppingCart } from "react-icons/fi"; // import ikon keranjang
 
 interface ProductCardProps {
   product: Product;
@@ -33,12 +34,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           </span>
         )}
 
-        {/* Add Button Overlay */}
+        {/* Add Button Overlay dengan ikon */}
         <button
           onClick={handleAdd}
-          className="absolute inset-0 m-auto w-32 h-10 bg-blue-600 text-white rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300"
+          className="absolute bottom-2 right-2 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity duration-300"
         >
-          Add
+          <FiShoppingCart className="w-5 h-5" />
         </button>
       </div>
 
