@@ -11,7 +11,8 @@ export default function Checkout() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [alreadyFetched, setAlreadyFetched] = useState(false); // ✅ Di dalam function component
+  const [alreadyFetched, setAlreadyFetched] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -30,7 +31,7 @@ export default function Checkout() {
     };
   }, [clientKey]);
 
-  // 🔹 Bayar ulang: isi cart dari order lama
+  // 🔹 Bayar ulang → isi cart dari order lama
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const orderId = params.get("order_id");
@@ -52,17 +53,10 @@ export default function Checkout() {
           quantity: i.quantity,
         }));
 
-        // 🔹 Cek apakah sudah ada di cart
-        const isAlreadyInCart = newItems.every((item: { product_id: any; }) =>
-          items.find((c: any) => c.product_id === item.product_id)
-        );
-
-        if (!isAlreadyInCart) {
-          clear();
-          setItems(newItems);
-          setToast("Cart diisi dari order sebelumnya");
-          setTimeout(() => setToast(null), 3000);
-        }
+        clear();
+        setItems(newItems);
+        setToast("Cart diisi dari order sebelumnya");
+        setTimeout(() => setToast(null), 3000);
       }
     } catch (err: any) {
       console.error("Fetch order items error:", err.response?.data || err.message);
@@ -71,7 +65,7 @@ export default function Checkout() {
     }
   };
 
-  // 🔹 Hitung total
+  // 🔹 Hitung total validasi
   const calculateTotal = () => {
     const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
     if (totalAmount <= 0) throw new Error("Total order harus lebih dari 0");
@@ -84,13 +78,22 @@ export default function Checkout() {
       setToast("Silakan login terlebih dahulu");
       return navigate("/login");
     }
-    if (items.length === 0) return setToast("Cart kosong");
+
+    if (items.length === 0) {
+      setToast("Cart kosong");
+      return;
+    }
 
     setLoading(true);
+
     try {
+      // Hitung total secara konsisten
+      const totalAmount = calculateTotal();
+
+      // Buat order di backend
       const orderPayload = {
         user_id: user.id,
-        total_amount: calculateTotal(),
+        total_amount: totalAmount,
         status: "pending",
         items: items.map((i) => ({
           product_id: i.product_id,
@@ -100,18 +103,39 @@ export default function Checkout() {
         payment_method: "midtrans",
       };
 
-      const orderRes = await api.post(`${apiUrl}/orders`, orderPayload);
+      console.log("Order payload:", orderPayload);
+
+      const orderRes = await api.post(
+        `${apiUrl}/orders`,
+        orderPayload,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}` // pastikan token login tersimpan di user
+          }
+        }
+      );
+
+      console.log("Order response:", orderRes.data);
+
       const orderId = orderRes.data?.data?.id || orderRes.data?.id;
       if (!orderId) throw new Error("Order ID tidak ditemukan");
 
+      // Ambil token snap dari backend
       const tokenRes = await api.post(`${apiUrl}/midtrans/token`, {
         order_id: String(orderId),
-        gross_amount: total,
+        gross_amount: totalAmount,
       });
+      console.log("Midtrans token response:", tokenRes.data);
 
       const snapToken = tokenRes.data?.snap_token;
       if (!snapToken) throw new Error("Snap token tidak ditemukan");
 
+      // Pastikan window.snap ada
+      if (!(window as any).snap || typeof (window as any).snap.pay !== "function") {
+        throw new Error("Midtrans Snap belum terload. Pastikan script Snap sudah ada di index.html");
+      }
+
+      // Panggil Midtrans Snap
       (window as any).snap.pay(snapToken, {
         onSuccess: () => {
           setToast("Pembayaran sukses");
@@ -122,19 +146,26 @@ export default function Checkout() {
         onError: () => setToast("Pembayaran gagal"),
         onClose: () => setToast("Anda menutup pembayaran"),
       });
+
     } catch (err: any) {
-      console.error("Checkout error:", err.response?.data || err.message);
-      setToast(err?.response?.data?.message || err.message || "Gagal membuat order");
+      console.error("Checkout error full:", err);
+      const message =
+        err?.response?.data?.message ||
+        err.message ||
+        JSON.stringify(err);
+      setToast(message);
     } finally {
       setLoading(false);
       setTimeout(() => setToast(null), 4000);
     }
   };
 
+
   return (
     <div className="p-6 container mx-auto">
       <h1 className="text-2xl font-bold mb-4">Checkout</h1>
       {toast && <Toast message={toast} />}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Cart */}
         <div className="md:col-span-2 bg-white p-4 rounded-xl shadow">
@@ -142,16 +173,34 @@ export default function Checkout() {
             <div>Cart kosong</div>
           ) : (
             items.map((i) => (
-              <div key={i.product_id} className="flex items-center justify-between p-2 border-b">
+              <div
+                key={i.product_id}
+                className="flex items-center justify-between p-2 border-b"
+              >
                 <div>
                   <div className="font-semibold">{i.name}</div>
                   <div className="text-sm text-gray-500">
                     Rp{i.price.toLocaleString()} x {i.quantity}
                   </div>
                   <div className="flex gap-2 mt-1">
-                    <button onClick={() => decrease(i.product_id)} className="px-2 bg-gray-200 rounded">-</button>
-                    <button onClick={() => increase(i.product_id)} className="px-2 bg-gray-200 rounded">+</button>
-                    <button onClick={() => remove(i.product_id)} className="px-2 bg-red-500 text-white rounded">Hapus</button>
+                    <button
+                      onClick={() => decrease(i.product_id)}
+                      className="px-2 bg-gray-200 rounded"
+                    >
+                      -
+                    </button>
+                    <button
+                      onClick={() => increase(i.product_id)}
+                      className="px-2 bg-gray-200 rounded"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={() => remove(i.product_id)}
+                      className="px-2 bg-red-500 text-white rounded"
+                    >
+                      Hapus
+                    </button>
                   </div>
                 </div>
                 <div className="font-medium">
@@ -165,13 +214,24 @@ export default function Checkout() {
         {/* Ringkasan & Bayar */}
         <div className="bg-white p-4 rounded-xl shadow">
           <div className="text-sm text-gray-500">Ringkasan</div>
-          <div className="text-2xl font-bold mt-2">Rp{total.toLocaleString()}</div>
+          <div className="text-2xl font-bold mt-2">
+            Rp{total.toLocaleString()}
+          </div>
           <button
             onClick={handlePayment}
             disabled={loading}
-            className={`mt-4 w-full py-3 rounded-2xl font-semibold text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"}`}
+            className={`mt-4 w-full py-3 rounded-2xl font-semibold text-white ${loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-indigo-600 hover:bg-indigo-700"
+              }`}
           >
-            {loading ? <><Spinner /> <span className="ml-2">Memproses...</span></> : "Bayar Sekarang"}
+            {loading ? (
+              <>
+                <Spinner /> <span className="ml-2">Memproses...</span>
+              </>
+            ) : (
+              "Bayar Sekarang"
+            )}
           </button>
         </div>
       </div>

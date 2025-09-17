@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Ambil user dari localStorage
     const storedUser = localStorage.getItem("user");
-<<<<<<< HEAD
+
     if (storedUser && storedUser !== "undefined") {
       try {
         setUser(JSON.parse(storedUser));
@@ -27,10 +27,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("user"); // reset kalau data rusak
       }
     }
-=======
+
     if (storedUser) setUser(JSON.parse(storedUser));
     setLoading(false); // selesai load user
->>>>>>> 6b8f1e1394c7126ed29640e306a2773737ad8cd3
+
   }, []);
 
 

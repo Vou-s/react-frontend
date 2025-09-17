@@ -33,15 +33,15 @@ export default function Home() {
           to="/products"
           className="p-6 bg-white rounded shadow text-center hover:bg-gray-100 transition"
         >
-          Browse Products
+          Trending Products
         </Link>
 
-        <Link
+        {/* <Link
           to="/checkout"
           className="p-6 bg-white rounded shadow text-center hover:bg-gray-100 transition"
         >
           Go to Checkout
-        </Link>
+        </Link> */}
 
         <Link
           to="/HistoryCheckout"

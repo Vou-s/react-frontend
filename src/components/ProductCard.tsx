@@ -2,7 +2,11 @@ import React from "react";
 import type { Product } from "../types.d";
 import { useCart } from "../context/CartContext";
 
-export default function ProductCard({ product }: { product: Product }) {
+interface ProductCardProps {
+  product: Product;
+}
+
+export default function ProductCard({ product }: ProductCardProps) {
   const { add } = useCart();
 
   const handleAdd = () => {
@@ -15,30 +19,40 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow duration-200
-                    w-full max-w-xs mx-auto sm:max-w-full">
-      <img
-        src="https://placehold.co/300x300"
-        alt={product.name}
-        className="w-full h-40 sm:h-48 object-cover rounded-lg"
-      />
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 w-full max-w-sm mx-auto relative group">
+      {/* Image */}
+      <div className="relative w-full h-48 sm:h-56">
+        <img
+          src={product.image || "https://placehold.co/400x400"}
+          alt={product.name}
+          className="w-full h-full object-cover"
+        />
+        {product.discount && (
+          <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+            {product.discount}% OFF
+          </span>
+        )}
 
-      <h3 className="font-semibold mt-3 text-base sm:text-lg">{product.name}</h3>
-      <p className="text-sm text-gray-500 mt-1 sm:text-gray-600 sm:text-sm line-clamp-2">
-        {product.description}
-      </p>
-
-      <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-        <div className="font-bold text-base sm:text-lg md:text-xl">
-          Rp{product.price.toLocaleString()}
-        </div>
-
+        {/* Add Button Overlay */}
         <button
           onClick={handleAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+          className="absolute inset-0 m-auto w-32 h-10 bg-blue-600 text-white rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300"
         >
           Add
         </button>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 flex flex-col gap-2">
+        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+          {product.name}
+        </h3>
+        <p className="text-sm text-gray-500 line-clamp-3">{product.description}</p>
+        <div className="flex items-center justify-between mt-2">
+          <div className="text-[10px] font-bold text-gray-900">
+            Rp{product.price.toLocaleString("id-ID")}
+          </div>
+        </div>
       </div>
     </div>
   );

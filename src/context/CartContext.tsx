@@ -23,6 +23,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  
 
   const add = (item: CartItem) => {
     // jika item sudah ada, update quantity

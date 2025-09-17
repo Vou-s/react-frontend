@@ -23,11 +23,11 @@ export default function Header() {
         {/* Left: Brand + Nav */}
         <div className="flex items-center gap-4">
           <Link to="/" className="font-bold text-lg">
-            POS App
+            Vourse Shop
           </Link>
-          <Link to="/products" className="text-sm">
+          {/* <Link to="/products" className="text-sm">
             Products
-          </Link>
+          </Link> */}
         </div>
 
         {/* Right: User + Cart */}
