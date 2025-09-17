@@ -27,7 +27,8 @@ export default function HistoryCheckout() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`${apiUrl}/orders?user_id=${user.id}`);
+      const res = await api.get(`${apiUrl}/orders?user_id=${user!.id}`);
+
       const data = res.data?.data || [];
       setOrders(data);
 
@@ -114,14 +115,16 @@ export default function HistoryCheckout() {
                 <div className="border-t pt-2">
                   {order.items.map((item: any) => (
                     <div key={item.product_id} className="flex justify-between py-1">
-                      <div>{item.name || "Produk"}</div>
+                      <div>{item.product?.name || "Produk"}</div>
                       <div>
-                        {item.quantity} x Rp{item.price.toLocaleString()} = Rp{(item.price * item.quantity).toLocaleString()}
+                        {item.quantity} x Rp{item.price.toLocaleString()} = Rp
+                        {(item.price * item.quantity).toLocaleString()}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+
 
               <div className="mt-2 font-bold text-right">
                 Total: Rp{order.total_amount.toLocaleString()}

@@ -28,11 +28,18 @@ const Dashboard: React.FC<DashboardProps> = ({ addToCart }) => {
           <h3 className="text-lg font-bold">{p.name}</h3>
           <p className="text-gray-600">Rp{p.price.toLocaleString()}</p>
           <button
-            onClick={() => addToCart({ ...p, quantity: 1 })}
+            onClick={() =>
+              addToCart({
+                ...p,
+                product_id: p.id, // wajib sesuai interface CartItem
+                quantity: 1,
+              })
+            }
             className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Tambah
           </button>
+
 
         </div>
       ))}

@@ -27,7 +27,6 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Welcome to POS App</h1>
 
       <div className="grid grid-cols-3 gap-6 mb-6">
         <Link
