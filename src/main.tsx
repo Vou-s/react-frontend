@@ -11,6 +11,7 @@ import Login from './pages/login';
 import Register from './pages/Register';
 import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
+import HistoryCheckout from './pages/HistoryCheckout';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route path="/HistoryCheckout" element={<HistoryCheckout />} />
           </Routes>
         </CartProvider>
       </AuthProvider>

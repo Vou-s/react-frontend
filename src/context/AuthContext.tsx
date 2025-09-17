@@ -15,8 +15,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedUser && storedUser !== "undefined") {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e);
+        localStorage.removeItem("user"); // reset kalau data rusak
+      }
+    }
   }, []);
+
 
   const login = (data: any) => {
     setUser(data);
@@ -40,3 +48,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   return useContext(AuthContext) as AuthContextType;
 }
+
