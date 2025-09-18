@@ -18,20 +18,39 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow">
+    <header className="bg-white shadow sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Left: Brand + Nav */}
-        <div className="flex items-center gap-4">
+        {/* Left: Brand */}
+        <div className="flex items-center gap-6">
           <Link to="/" className="font-bold text-lg">
             Vourse Shop
           </Link>
-          {/* <Link to="/products" className="text-sm">
-            Products
-          </Link> */}
+
+          {/* Main nav */}
+          <nav className="hidden md:flex gap-4 text-sm">
+            {/* <Link to="/products" className="hover:text-blue-500">
+              Trending
+            </Link> */}
+            <Link to="/HistoryCheckout" className="hover:text-blue-500">
+              History
+            </Link>
+            <span className="text-gray-400">Reports</span>
+          </nav>
         </div>
 
         {/* Right: User + Cart */}
         <div className="flex items-center gap-4 relative">
+          {/* Cart */}
+          <Link to="/checkout" className="relative">
+            <div className="p-2 border rounded hover:bg-gray-100">🛒</div>
+            {items.length > 0 && (
+              <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-2">
+                {items.length}
+              </span>
+            )}
+          </Link>
+
+          {/* User */}
           {user ? (
             <div className="relative">
               {/* Avatar button */}
@@ -49,7 +68,7 @@ export default function Header() {
                     Hi, {user.name || user.email}
                   </div>
                   <Link
-                    to="/history-checkout"
+                    to="/HistoryCheckout"
                     className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
                     onClick={() => setOpen(false)}
                   >
@@ -74,16 +93,6 @@ export default function Header() {
               Login
             </Link>
           )}
-
-          {/* Cart */}
-          {/* <Link to="/checkout" className="relative">
-            <div className="p-2 border rounded">Cart</div>
-            {items.length > 0 && (
-              <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-2">
-                {items.length}
-              </span>
-            )}
-          </Link> */}
         </div>
       </div>
     </header>

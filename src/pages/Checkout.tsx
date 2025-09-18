@@ -19,7 +19,7 @@ export default function Checkout() {
   const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  // 🔹 Load Midtrans Snap
+  // Load Midtrans Snap script
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
@@ -31,7 +31,7 @@ export default function Checkout() {
     };
   }, [clientKey]);
 
-  // 🔹 Bayar ulang → isi cart dari order lama
+  // Isi cart dari order lama jika ada order_id di query
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const orderId = params.get("order_id");
@@ -52,114 +52,97 @@ export default function Checkout() {
           price: i.price,
           quantity: i.quantity,
         }));
-
         clear();
         setItems(newItems);
-        setToast("Cart diisi dari order sebelumnya");
-        setTimeout(() => setToast(null), 3000);
+        showToast("Cart diisi dari order sebelumnya");
       }
     } catch (err: any) {
       console.error("Fetch order items error:", err.response?.data || err.message);
-      setToast("Gagal memuat order lama");
-      setTimeout(() => setToast(null), 3000);
+      showToast("Gagal memuat order lama");
     }
   };
 
-  // 🔹 Hitung total validasi
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const calculateTotal = () => {
     const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
     if (totalAmount <= 0) throw new Error("Total order harus lebih dari 0");
     return totalAmount;
   };
 
-  // 🔹 Proses pembayaran
   const handlePayment = async () => {
     if (!user) {
-      setToast("Silakan login terlebih dahulu");
+      showToast("Silakan login terlebih dahulu");
       return navigate("/login");
     }
 
     if (items.length === 0) {
-      setToast("Cart kosong");
+      showToast("Cart kosong");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Hitung total secara konsisten
       const totalAmount = calculateTotal();
 
-      // Buat order di backend
       const orderPayload = {
         user_id: user.id,
-        total_amount: totalAmount,
+        total_amount: total, // total dari useCart()
         status: "pending",
-        items: items.map((i) => ({
+        payment_method: "midtrans",
+        items: items.map(i => ({
           product_id: i.product_id,
           quantity: i.quantity,
           price: i.price,
         })),
-        payment_method: "midtrans",
       };
+      console.log("ORDER PAYLOAD:", JSON.stringify(orderPayload, null, 2));
 
-      console.log("Order payload:", orderPayload);
 
-      const orderRes = await api.post(
-        `${apiUrl}/orders`,
-        orderPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}` // pastikan token login tersimpan di user
-          }
-        }
-      );
-
-      console.log("Order response:", orderRes.data);
+      const orderRes = await api.post(`${apiUrl}/orders`, orderPayload, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
 
       const orderId = orderRes.data?.data?.id || orderRes.data?.id;
       if (!orderId) throw new Error("Order ID tidak ditemukan");
 
-      // Ambil token snap dari backend
+      // Ambil snap token dari backend
       const tokenRes = await api.post(`${apiUrl}/midtrans/token`, {
         order_id: String(orderId),
         gross_amount: totalAmount,
       });
-      console.log("Midtrans token response:", tokenRes.data);
 
       const snapToken = tokenRes.data?.snap_token;
       if (!snapToken) throw new Error("Snap token tidak ditemukan");
 
-      // Pastikan window.snap ada
+      // Pastikan snap sudah tersedia
       if (!(window as any).snap || typeof (window as any).snap.pay !== "function") {
-        throw new Error("Midtrans Snap belum terload. Pastikan script Snap sudah ada di index.html");
+        throw new Error("Midtrans Snap belum terload");
       }
 
-      // Panggil Midtrans Snap
       (window as any).snap.pay(snapToken, {
         onSuccess: () => {
-          setToast("Pembayaran sukses");
+          showToast("Pembayaran sukses");
           clear();
-          window.location.href = "/payment-success";
+          navigate("/payment-success");
         },
-        onPending: () => setToast("Pembayaran pending — tunggu konfirmasi"),
-        onError: () => setToast("Pembayaran gagal"),
-        onClose: () => setToast("Anda menutup pembayaran"),
+        onPending: () => showToast("Pembayaran pending — tunggu konfirmasi"),
+        onError: () => showToast("Pembayaran gagal"),
+        onClose: () => showToast("Anda menutup pembayaran"),
       });
-
     } catch (err: any) {
-      console.error("Checkout error full:", err);
+      console.error("Checkout error:", err);
       const message =
-        err?.response?.data?.message ||
-        err.message ||
-        JSON.stringify(err);
-      setToast(message);
+        err?.response?.data?.message || err.message || "Terjadi kesalahan";
+      showToast(message);
     } finally {
       setLoading(false);
-      setTimeout(() => setToast(null), 4000);
     }
   };
-
 
   return (
     <div className="p-6 container mx-auto">
@@ -173,34 +156,16 @@ export default function Checkout() {
             <div>Cart kosong</div>
           ) : (
             items.map((i) => (
-              <div
-                key={i.product_id}
-                className="flex items-center justify-between p-2 border-b"
-              >
+              <div key={i.product_id} className="flex items-center justify-between p-2 border-b">
                 <div>
                   <div className="font-semibold">{i.name}</div>
                   <div className="text-sm text-gray-500">
                     Rp{i.price.toLocaleString()} x {i.quantity}
                   </div>
                   <div className="flex gap-2 mt-1">
-                    <button
-                      onClick={() => decrease(i.product_id)}
-                      className="px-2 bg-gray-200 rounded"
-                    >
-                      -
-                    </button>
-                    <button
-                      onClick={() => increase(i.product_id)}
-                      className="px-2 bg-gray-200 rounded"
-                    >
-                      +
-                    </button>
-                    <button
-                      onClick={() => remove(i.product_id)}
-                      className="px-2 bg-red-500 text-white rounded"
-                    >
-                      Hapus
-                    </button>
+                    <button onClick={() => decrease(i.product_id)} className="px-2 bg-gray-200 rounded">-</button>
+                    <button onClick={() => increase(i.product_id)} className="px-2 bg-gray-200 rounded">+</button>
+                    <button onClick={() => remove(i.product_id)} className="px-2 bg-red-500 text-white rounded">Hapus</button>
                   </div>
                 </div>
                 <div className="font-medium">
@@ -214,21 +179,15 @@ export default function Checkout() {
         {/* Ringkasan & Bayar */}
         <div className="bg-white p-4 rounded-xl shadow">
           <div className="text-sm text-gray-500">Ringkasan</div>
-          <div className="text-2xl font-bold mt-2">
-            Rp{total.toLocaleString()}
-          </div>
+          <div className="text-2xl font-bold mt-2">Rp{total.toLocaleString()}</div>
           <button
             onClick={handlePayment}
             disabled={loading}
-            className={`mt-4 w-full py-3 rounded-2xl font-semibold text-white ${loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-indigo-600 hover:bg-indigo-700"
+            className={`mt-4 w-full py-3 rounded-2xl font-semibold text-white ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
               }`}
           >
             {loading ? (
-              <>
-                <Spinner /> <span className="ml-2">Memproses...</span>
-              </>
+              <><Spinner /> <span className="ml-2">Memproses...</span></>
             ) : (
               "Bayar Sekarang"
             )}

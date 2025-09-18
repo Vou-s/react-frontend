@@ -25,4 +25,8 @@ const getSnapToken = async (orderId: number) => {
   return res.data.token;
 };
 
+export const fetchCategories = () => api.get("/categories");
+export const fetchSubcategories = (categoryId: number) => api.get(`/categories/${categoryId}/subcategories`);
+export const fetchProducts = () => api.get("/products");
+
 export default api;
