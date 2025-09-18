@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useCart, CartItem } from "../context/CartContext";
-import api from "../services/api";
+import { useCart } from "../context/CartContext";
 import { ShoppingCartIcon } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 interface Category {
   id: number;
@@ -26,50 +25,26 @@ interface Product {
 }
 
 export default function Home() {
-  const { user } = useAuth();
-  const { items: cartItems, add } = useCart(); // <-- pakai context
-  const [pendingCount, setPendingCount] = useState(0);
-  const [products, setProducts] = useState<Product[]>([]);
+  const { items: cartItems, add } = useCart();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | "all">("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
   const [openCategories, setOpenCategories] = useState<{ [key: number]: boolean }>({});
-  const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
-  const handleClick = () => navigate("/checkout");
+  // ===== FETCH DATA =====
+ const fetchCategories = async () => {
+  try {
+    const res = await api.get(`${import.meta.env.VITE_API_URL}/categories`);
+    const data = res.data?.data || res.data || [];
+    setCategories(data.map((cat: any) => ({ ...cat, subcategories: cat.subcategories || [] })));
+  } catch (err) {
+    console.error("Fetch categories error:", err);
+  }
+};
 
-  // ===== ADD TO CART =====
-  const handleAddToCart = (product: Product) => {
-    add({
-      product_id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-    });
-  };
-
-  // ===== FETCH FUNCTIONS =====
-  const fetchPendingOrders = async () => {
-    if (!user) return;
-    try {
-      const res = await api.get(`${apiUrl}/orders?user_id=${user.id}`);
-      const data = res.data?.data || [];
-      const pendingOrders = data.filter((order: any) => order.status === "pending");
-      setPendingCount(pendingOrders.length);
-    } catch (err) {
-      console.error("Fetch pending orders error:", err);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const res = await api.get(`${apiUrl}/categories`);
-      setCategories(res.data?.map((cat: any) => ({ ...cat, subcategories: cat.subcategories || [] })) || []);
-    } catch (err) {
-      console.error("Fetch categories error:", err);
-    }
-  };
 
   const fetchProducts = async (categoryId?: number, subcategoryId?: number) => {
     try {
@@ -104,22 +79,28 @@ export default function Home() {
     fetchProducts();
   };
 
-  // ===== REAL-TIME POLLING =====
+  const handleAddToCart = (product: Product) => {
+    add({ product_id: product.id, name: product.name, price: product.price, quantity: 1 });
+  };
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      alert("Cart kosong! Silakan tambahkan produk terlebih dahulu.");
+      return;
+    }
+    navigate("/checkout");
+  };
+
+  // ===== EFFECTS =====
   useEffect(() => {
     fetchCategories();
     fetchProducts();
-    fetchPendingOrders();
+  }, []);
 
-    const interval = setInterval(() => {
-      fetchCategories();
-      fetchProducts(selectedCategory === "all" ? undefined : selectedCategory as number, selectedSubcategory || undefined);
-      fetchPendingOrders();
-    }, 5000); // setiap 5 detik
+  useEffect(() => {
+    fetchProducts(selectedCategory === "all" ? undefined : selectedCategory as number, selectedSubcategory || undefined);
+  }, [selectedCategory, selectedSubcategory]);
 
-    return () => clearInterval(interval);
-  }, [user, selectedCategory, selectedSubcategory]);
-
-  // ===== RENDER =====
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Banner */}
@@ -216,8 +197,11 @@ export default function Home() {
 
       {/* Floating Cart */}
       <button
-        className="fixed bottom-4 right-4 bg-yellow-500 text-black p-4 rounded-full shadow-lg hover:bg-yellow-400"
-        onClick={handleClick}
+        className={`fixed bottom-4 right-4 bg-yellow-500 text-black p-4 rounded-full shadow-lg hover:bg-yellow-400 ${
+          cartItems.length === 0 ? "opacity-50 cursor-not-allowed hover:bg-yellow-500" : ""
+        }`}
+        onClick={handleCheckout}
+        disabled={cartItems.length === 0}
       >
         🛒
         {cartItems.length > 0 && (
