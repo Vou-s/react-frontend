@@ -10,13 +10,13 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ addToCart }) => {
   const [products, setProducts] = useState<Product[]>([]);
 
-  useEffect(() => {
-    setProducts([
-      { id: 1, name: "Produk A", price: 50000 },
-      { id: 2, name: "Produk B", price: 75000 },
-      { id: 3, name: "Produk C", price: 100000 },
-    ]);
-  }, []);
+  // useEffect(() => {
+  //   setProducts([
+  //     { id: 1, name: "Produk A", price: 50000 },
+  //     { id: 2, name: "Produk B", price: 75000 },
+  //     { id: 3, name: "Produk C", price: 100000 },
+  //   ]);
+  // }, []);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">

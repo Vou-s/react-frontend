@@ -31,31 +31,44 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<number | "all">("all");
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
   const [openCategories, setOpenCategories] = useState<{ [key: number]: boolean }>({});
+  const [loading, setLoading] = useState(false); // default false
+
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
 
   // ===== FETCH DATA =====
   const fetchCategories = async () => {
+    setLoading(true);
     try {
-      const res = await api.get(`${import.meta.env.VITE_API_URL}/categories`);
+      const res = await api.get(`${apiUrl}/categories`);
       const data = res.data?.data || res.data || [];
-      setCategories(data.map((cat: any) => ({ ...cat, subcategories: cat.subcategories || [] })));
+      setCategories(
+        data.map((cat: any) => ({
+          ...cat,
+          subcategories: cat.subcategories || [],
+        }))
+      );
     } catch (err) {
       console.error("Fetch categories error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-
   const fetchProducts = async (categoryId?: number, subcategoryId?: number) => {
+    setLoading(true); // start loading setiap kali fetch
     try {
       const params: any = {};
       if (subcategoryId) params.subcategory_id = subcategoryId;
       else if (categoryId) params.category_id = categoryId;
 
       const res = await api.get(`${apiUrl}/products`, { params });
-      setProducts(res.data);
+      setProducts(res.data?.data || res.data || []);
     } catch (err) {
       console.error("Fetch products error:", err);
+      setProducts([]);
+    } finally {
+      setLoading(false); // selesai loading
     }
   };
 
@@ -64,23 +77,25 @@ export default function Home() {
     setOpenCategories((prev) => ({ ...prev, [catId]: !prev[catId] }));
     setSelectedCategory(catId);
     setSelectedSubcategory(null);
-    fetchProducts(catId);
   };
 
   const selectSubcategory = (catId: number, subId: number) => {
     setSelectedCategory(catId);
     setSelectedSubcategory(subId);
-    fetchProducts(undefined, subId);
   };
 
   const selectAll = () => {
     setSelectedCategory("all");
     setSelectedSubcategory(null);
-    fetchProducts();
   };
 
   const handleAddToCart = (product: Product) => {
-    add({ product_id: product.id, name: product.name, price: product.price, quantity: 1 });
+    add({
+      product_id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+    });
   };
 
   const handleCheckout = () => {
@@ -94,11 +109,14 @@ export default function Home() {
   // ===== EFFECTS =====
   useEffect(() => {
     fetchCategories();
-    fetchProducts();
+    fetchProducts(); // initial load
   }, []);
 
   useEffect(() => {
-    fetchProducts(selectedCategory === "all" ? undefined : selectedCategory as number, selectedSubcategory || undefined);
+    fetchProducts(
+      selectedCategory === "all" ? undefined : (selectedCategory as number),
+      selectedSubcategory || undefined
+    );
   }, [selectedCategory, selectedSubcategory]);
 
   return (
@@ -115,7 +133,9 @@ export default function Home() {
 
           <div
             onClick={selectAll}
-            className={`cursor-pointer px-2 py-1 rounded mb-2 hover:bg-yellow-100 transition ${selectedCategory === "all" ? "bg-yellow-200 font-bold" : ""}`}
+            className={`cursor-pointer px-2 py-1 rounded mb-2 hover:bg-yellow-100 transition ${
+              selectedCategory === "all" ? "bg-yellow-200 font-bold" : ""
+            }`}
           >
             Semua Produk
           </div>
@@ -127,22 +147,36 @@ export default function Home() {
                 <li key={cat.id}>
                   <div
                     onClick={() => toggleCategory(cat.id)}
-                    className={`cursor-pointer px-2 py-1 rounded hover:bg-yellow-100 transition flex justify-between items-center ${selectedCategory === cat.id && !selectedSubcategory ? "bg-yellow-200 font-bold" : ""}`}
+                    className={`cursor-pointer px-2 py-1 rounded hover:bg-yellow-100 transition flex justify-between items-center ${
+                      selectedCategory === cat.id && !selectedSubcategory
+                        ? "bg-yellow-200 font-bold"
+                        : ""
+                    }`}
                   >
                     {cat.name}
                     {cat.subcategories && cat.subcategories.length > 0 && (
-                      <span className="ml-2 text-xs text-gray-500">{isOpen ? "−" : "+"}</span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {isOpen ? "−" : "+"}
+                      </span>
                     )}
                   </div>
 
                   {cat.subcategories && cat.subcategories.length > 0 && (
-                    <div className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-40 mt-1" : "max-h-0"}`}>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ${
+                        isOpen ? "max-h-40 mt-1" : "max-h-0"
+                      }`}
+                    >
                       <ul className="ml-4 space-y-1">
                         {cat.subcategories.map((sub) => (
                           <li
                             key={sub.id}
                             onClick={() => selectSubcategory(cat.id, sub.id)}
-                            className={`cursor-pointer px-2 py-1 rounded hover:bg-yellow-100 transition ${selectedSubcategory === sub.id ? "bg-yellow-200 font-bold" : ""}`}
+                            className={`cursor-pointer px-2 py-1 rounded hover:bg-yellow-100 transition ${
+                              selectedSubcategory === sub.id
+                                ? "bg-yellow-200 font-bold"
+                                : ""
+                            }`}
                           >
                             {sub.name}
                           </li>
@@ -162,19 +196,30 @@ export default function Home() {
             {selectedSubcategory
               ? `Produk Subkategori`
               : selectedCategory === "all"
-                ? "Semua Produk"
-                : `Produk Kategori`}
+              ? "Semua Produk"
+              : `Produk Kategori`}
           </h2>
 
-          {products.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+            </div>
+          ) : products.length === 0 ? (
             <p className="text-gray-500">Produk belum tersedia...</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product) => (
-                <div key={product.id} className="bg-white rounded-lg p-4 shadow hover:scale-105 transition relative">
+                <div
+                  key={product.id}
+                  className="bg-white rounded-lg p-4 shadow hover:scale-105 transition relative"
+                >
                   <div className="bg-gray-200 h-32 rounded mb-2 flex items-center justify-center overflow-hidden relative group">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="object-cover h-full w-full" />
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="object-cover h-full w-full"
+                      />
                     ) : (
                       <span className="text-gray-500 text-sm">No Image</span>
                     )}
@@ -187,7 +232,9 @@ export default function Home() {
                     </button>
                   </div>
                   <h3 className="font-semibold">{product.name}</h3>
-                  <p className="text-sm text-gray-600">Rp {product.price?.toLocaleString()}</p>
+                  <p className="text-sm text-gray-600">
+                    Rp {product.price?.toLocaleString()}
+                  </p>
                 </div>
               ))}
             </div>
@@ -197,8 +244,11 @@ export default function Home() {
 
       {/* Floating Cart */}
       <button
-        className={`fixed bottom-4 right-4 bg-yellow-500 text-black p-4 rounded-full shadow-lg hover:bg-yellow-400 ${cartItems.length === 0 ? "opacity-50 cursor-not-allowed hover:bg-yellow-500" : ""
-          }`}
+        className={`fixed bottom-4 right-4 bg-yellow-500 text-black p-4 rounded-full shadow-lg hover:bg-yellow-400 ${
+          cartItems.length === 0
+            ? "opacity-50 cursor-not-allowed hover:bg-yellow-500"
+            : ""
+        }`}
         onClick={handleCheckout}
         disabled={cartItems.length === 0}
       >
