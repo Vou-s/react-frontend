@@ -35,15 +35,15 @@ export default function Home() {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   // ===== FETCH DATA =====
- const fetchCategories = async () => {
-  try {
-    const res = await api.get(`${import.meta.env.VITE_API_URL}/categories`);
-    const data = res.data?.data || res.data || [];
-    setCategories(data.map((cat: any) => ({ ...cat, subcategories: cat.subcategories || [] })));
-  } catch (err) {
-    console.error("Fetch categories error:", err);
-  }
-};
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get(`${import.meta.env.VITE_API_URL}/categories`);
+      const data = res.data?.data || res.data || [];
+      setCategories(data.map((cat: any) => ({ ...cat, subcategories: cat.subcategories || [] })));
+    } catch (err) {
+      console.error("Fetch categories error:", err);
+    }
+  };
 
 
   const fetchProducts = async (categoryId?: number, subcategoryId?: number) => {
@@ -162,8 +162,8 @@ export default function Home() {
             {selectedSubcategory
               ? `Produk Subkategori`
               : selectedCategory === "all"
-              ? "Semua Produk"
-              : `Produk Kategori`}
+                ? "Semua Produk"
+                : `Produk Kategori`}
           </h2>
 
           {products.length === 0 ? (
@@ -197,9 +197,8 @@ export default function Home() {
 
       {/* Floating Cart */}
       <button
-        className={`fixed bottom-4 right-4 bg-yellow-500 text-black p-4 rounded-full shadow-lg hover:bg-yellow-400 ${
-          cartItems.length === 0 ? "opacity-50 cursor-not-allowed hover:bg-yellow-500" : ""
-        }`}
+        className={`fixed bottom-4 right-4 bg-yellow-500 text-black p-4 rounded-full shadow-lg hover:bg-yellow-400 ${cartItems.length === 0 ? "opacity-50 cursor-not-allowed hover:bg-yellow-500" : ""
+          }`}
         onClick={handleCheckout}
         disabled={cartItems.length === 0}
       >

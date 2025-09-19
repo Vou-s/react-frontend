@@ -16,35 +16,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Ambil user dari localStorage
     const storedUser = localStorage.getItem("user");
-
     if (storedUser && storedUser !== "undefined") {
       try {
         setUser(JSON.parse(storedUser));
       } catch (e) {
-        console.error("Failed to parse user from localStorage:", e);
-        localStorage.removeItem("user"); // reset kalau data rusak
+        console.error("Failed to parse user:", e);
+        localStorage.removeItem("user");
       }
     }
-
-    if (storedUser) setUser(JSON.parse(storedUser));
-    setLoading(false); // selesai load user
-
+    setLoading(false);
   }, []);
-
 
   const login = (data: any) => {
     setUser(data);
     localStorage.setItem("user", JSON.stringify(data));
+    if (data.token) {
+      localStorage.setItem("access_token", data.token);
+    }
     navigate("/dashboard");
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
-    navigate("/login");
+    localStorage.removeItem("access_token");
+    navigate("/");
   };
+
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
